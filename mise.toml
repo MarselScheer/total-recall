@@ -1,0 +1,6 @@
+[settings]
+minimum_release_age = "30d"
+
+[tools]
+node = "latest"
+"npm:@fission-ai/openspec" = "1.11.0"
