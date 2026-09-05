@@ -41,7 +41,7 @@ process.
 
 ## Design Principles
 
-This project follows a set of [design rules](design-principles.md) focused on
+This project follows a set of [design rules](.eca/rules/design-principles.md) focused on
 testability, dependency injection, closure-based composition, and avoiding
 CLOS/classes. Every function is designed to be tested in isolation without
 mockist trickery.
