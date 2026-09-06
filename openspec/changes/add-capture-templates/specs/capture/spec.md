@@ -77,35 +77,25 @@ The examples field SHALL parse each bullet line into a cons cell `(text . props)
 - **THEN** the parser SHALL return `:examples (("\nclass A:\n    a: int = 20" . (:lang "Python")))`
 
 ### Requirement: Commit parses, creates, and saves
-The commit function SHALL parse the buffer, create an item closure, and save it via the injected storage adapter.
+The commit function SHALL parse the buffer, create an item from the parsed data, and persist it.
 
-#### Scenario: Commit saves item to adapter
+#### Scenario: Commit persists valid capture data
 - **WHEN** the commit function processes a valid capture buffer
-- **THEN** it SHALL create an item via `total-recall-make-item`
-- **AND** save it via the adapter's `:save-item` function
-- **AND** return the item id
+- **THEN** a new item SHALL be created from the parsed data and persisted
+- **AND** the function SHALL return the new item's identifier
 
 #### Scenario: Commit with empty buffer does nothing
 - **WHEN** the commit function processes an empty (or comment-only) buffer
 - **THEN** it SHALL NOT save anything
 - **AND** it SHALL signal an error or cancel the capture
 
-### Requirement: Tags are applied via tag module
-When tags are present in the parsed capture, the commit SHALL use `total-recall-tag--add` to apply them after item creation.
+### Requirement: Captured tags are persisted
+When the user provides tags in the capture buffer, those tags SHALL be persisted alongside the item, retrievable through the tag interface.
 
-#### Scenario: Tags are applied after creation
+#### Scenario: Tags are persisted from capture
 - **WHEN** a capture has tags `:vocabulary :german`
-- **THEN** the item SHALL be created first
-- **AND** `total-recall-tag--add` SHALL be called with those tags
-- **AND** the item's `:tags` SHALL contain them
-- **AND** the saved item SHALL persist tagged state
-
-### Requirement: Adapter is injected
-The capture system SHALL receive its storage adapter and configuration via a factory function, following the project's dependency injection pattern.
-
-#### Scenario: Factory returns configured capture committer
-- **WHEN** `total-recall-capture-init` is called with an adapter plist
-- **THEN** it SHALL return a function that, when called, runs the complete capture flow against that adapter
+- **THEN** the saved item SHALL have `:tags (:vocabulary :german)`
+- **AND** the tags SHALL be queryable through the tag interface
 
 ### Requirement: Capture template is a `plain` org-capture type
 The org-capture template SHALL use type `plain` to insert the form directly into a new buffer without wrapping it in an Org entry.
