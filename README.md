@@ -78,6 +78,62 @@ package and want to avoid re-cloning.
                           :local-repo "/home/user/code/total-recall"))
 ```
 
+## Configuration
+
+The package does **not** auto-configure on load — you must explicitly
+initialize a storage adapter and pass it to the capture system. This follows
+the project's dependency-injection design: you decide where data lives and
+whether to register the org-capture template.
+
+### 1. Initialize a storage adapter
+
+`total-recall-storage-init` creates a SQLite-backed adapter.  Pass `nil` for
+an in-memory database (volatile — useful for testing or ephemeral sessions),
+or a file path for persistent storage:
+
+```elisp
+;; In-memory (data lost on restart)
+(setq recall-adapter (total-recall-storage-init nil))
+
+;; File-backed persistence (recommended)
+(setq recall-adapter (total-recall-storage-init "~/.emacs.d/recall.db"))
+```
+
+The returned adapter is a plist of functions (`:load-item`, `:save-item`,
+`:delete-item`, etc.) that the capture module uses under the hood.
+
+### 2. Wire up the capture template
+
+`total-recall-capture-init` takes the adapter and returns a configured capture
+function.  By default (`:register t`), it registers an org-capture template
+with key `"r"` / description `"Recall"`.  Pass `:register nil` to skip this:
+
+```elisp
+;; Register the "Recall" capture template (default)
+(total-recall-capture-init recall-adapter)
+
+;; Or: skip automatic registration (e.g., you want to add it manually)
+(total-recall-capture-init recall-adapter :register nil)
+```
+
+### Full example with `use-package`
+
+Putting it all together in a `:config` block:
+
+```elisp
+(use-package total-recall
+  :straight (total-recall :type git :host github :repo "MarselScheer/total-recall"
+                          :local-repo "/home/m/docker_fs/repos/total-recall")
+  :config
+  ;; Initialize persistent storage
+  (let ((adapter (total-recall-storage-init "~/.emacs.d/recall.db")))
+    ;; Register the "Recall" org-capture template
+    (total-recall-capture-init adapter)))
+```
+
+After loading, run `M-x org-capture` (or your org-capture keybinding) and
+select **"Recall"** (key `"r"`) to open the structured capture buffer.
+
 ### Removing the capture template after loading
 
 When `total-recall-capture` loads with its default `:register` option, it adds
