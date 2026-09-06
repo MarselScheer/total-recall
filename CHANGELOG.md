@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Capture module** (`total-recall-capture.el`) — interactive capture workflow
   with template-driven item creation, configurable capture templates, item
   persistence, and inline tagging.
+- **Item validation** (`total-recall-item.el`) — `total-recall-make-item` now
+  validates mandatory `:term` and `:definition` keys and signals a
+  `user-error` when either is missing. Regression tests added under
+  `tests/test-item-model.el`.
+- **Capture template safety** (`total-recall-capture.el`) — the target file is
+  cleared before each capture to prevent stale content leakage; begin/end
+  markers delimit the newly-inserted template region; the file is cleared
+  after capture and the base buffer is marked unmodified to prevent
+  overwriting cleared content on save.
 - **Package entry point** (`total-recall.el`) — `require`-based entry point
   that loads all modules; package is now installable via `package.el`.
 - **Tests** — ERT test suite for the capture module under `tests/test-capture.el`.
