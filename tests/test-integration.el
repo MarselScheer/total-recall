@@ -13,8 +13,9 @@ load it back, and assert all data is preserved."
          (item (total-recall-make-item
                 '(:term "dependency injection"
                   :definition "passing dependencies as function arguments"
-                  :examples ("In Python: injection via args"
-                             "In Elisp: closure over deps")
+                  :examples (("In Python: injection via args" . (:lang "Python"))
+                             ("Just a plain example" . nil)
+                             ("In Elisp: closure over deps" . (:lang "Elisp")))
                   :analogy "Like ordering food at a restaurant"
                   :notes "Core concept in software design")))
          (id (funcall item 'get :id))

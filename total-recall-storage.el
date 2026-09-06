@@ -12,6 +12,47 @@
 (require 'cl-lib)
 
 ;; ---------------------------------------------------------------------------
+;; Example format helpers
+;; ---------------------------------------------------------------------------
+
+(defun total-recall--examples-encode (examples)
+  "Encode EXAMPLES list into a JSON-encodable alist.
+
+Each element of EXAMPLES is a cons cell (TEXT . PROPS) where TEXT is a
+string and PROPS is a plist.  Returns an alist where each element is an
+alist of (\"text\" . TEXT) plus (\"KEY-NAME\" . VAL) for each prop.
+
+This representation round-trips through json-encode/json-read-from-string
+because JSON object keys come back as symbols in Emacs."
+  (when examples
+    (mapcar (lambda (ex)
+              (let ((text (car ex))
+                    (props (cdr ex)))
+                (cons (cons "text" text)
+                      (cl-loop for (k v) on props by #'cddr
+                               collect (cons (substring (symbol-name k) 1) v)))))
+            examples)))
+
+(defun total-recall--examples-decode (json-string)
+  "Decode EXAMPLES JSON string back to (TEXT . PROPS) list.
+
+JSON-STRING is the raw JSON stored in the database, an array of objects.
+Returns nil when JSON-STRING is nil, \"null\", or the empty array.
+Reconstructs each example as (TEXT . PROPS) where TEXT is a string and
+PROPS is a plist of keyword-value pairs."
+  (when (and json-string
+             (not (string= json-string "null"))
+             (not (string= json-string "[]")))
+    (let ((decoded (append (json-read-from-string json-string) nil)))
+      (mapcar (lambda (alist)
+                (let ((text (cdr (assq 'text alist))))
+                  (cons text
+                        (cl-loop for (key . val) in alist
+                                 unless (eq key 'text)
+                                 append (list (intern (concat ":" (symbol-name key))) val)))))
+              decoded))))
+
+;; ---------------------------------------------------------------------------
 ;; Storage adapter factory
 ;; ---------------------------------------------------------------------------
 
@@ -69,7 +110,7 @@ Returns a plist of adapter functions:
                    (list :id db-id :term term :definition definition
                          :tags (mapcar #'intern (json-read-from-string tags))
                          :depth depth
-                         :examples (and examples (append (json-read-from-string examples) nil))
+                         :examples (total-recall--examples-decode examples)
                          :analogy analogy
                          :notes notes
                          :created created
@@ -81,7 +122,9 @@ Returns a plist of adapter functions:
             (let* ((data (funcall item 'serialize))
                    (tags (plist-get data :tags))
                    (encoded-tags (json-encode (if tags (mapcar #'symbol-name tags) [])))
-                   (encoded-examples (json-encode (plist-get data :examples))))
+                   (encoded-examples (if-let ((ex (total-recall--examples-encode (plist-get data :examples))))
+                         (json-encode ex)
+                       "[]")))
               (sqlite-execute db
                 "INSERT OR REPLACE INTO items (id, term, definition, tags, depth, examples, analogy, notes, created, modified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                 (list (plist-get data :id)
@@ -140,7 +183,7 @@ Returns a plist of adapter functions:
                           (list :id db-id :term term :definition definition
                                 :tags (mapcar #'intern (json-read-from-string tags))
                                 :depth depth
-                                :examples (and examples (json-read-from-string examples))
+                                :examples (total-recall--examples-decode examples)
                                 :analogy analogy
                                 :notes notes
                                 :created created

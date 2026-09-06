@@ -41,10 +41,112 @@ process.
 
 ## Design Principles
 
-This project follows a set of [design rules](design-principles.md) focused on
+This project follows a set of [design rules](.eca/rules/design-principles.md) focused on
 testability, dependency injection, closure-based composition, and avoiding
 CLOS/classes. Every function is designed to be tested in isolation without
 mockist trickery.
+
+## Installation
+
+### Prerequisites
+
+- Emacs 26.1 or later
+- [straight.el](https://github.com/radian-software/straight.el) bootstrap (if not already set up)
+
+### Via straight.el + use-package
+
+Add the following to your Emacs config:
+
+```elisp
+(use-package total-recall
+  :straight (total-recall :type git :host github
+                          :repo "MarselScheer/total-recall"
+                          :branch "main"))
+```
+
+### Local development checkout
+
+Use the `:local-repo` keyword to point straight.el at an
+existing clone on disk. This is useful when you're actively developing the
+package and want to avoid re-cloning.
+
+```elisp
+;; Clone the repo somewhere, e.g. /home/user/code/total-recall
+;; Then tell straight.el about it:
+(use-package total-recall
+  :straight (total-recall :type git :host github :repo "MarselScheer/total-recall"
+                          :local-repo "/home/user/code/total-recall"))
+```
+
+## Configuration
+
+The package does **not** auto-configure on load — you must explicitly
+initialize a storage adapter and pass it to the capture system. This follows
+the project's dependency-injection design: you decide where data lives and
+whether to register the org-capture template.
+
+### 1. Initialize a storage adapter
+
+`total-recall-storage-init` creates a SQLite-backed adapter.  Pass `nil` for
+an in-memory database (volatile — useful for testing or ephemeral sessions),
+or a file path for persistent storage:
+
+```elisp
+;; In-memory (data lost on restart)
+(setq recall-adapter (total-recall-storage-init nil))
+
+;; File-backed persistence (recommended)
+(setq recall-adapter (total-recall-storage-init "~/.emacs.d/recall.db"))
+```
+
+The returned adapter is a plist of functions (`:load-item`, `:save-item`,
+`:delete-item`, etc.) that the capture module uses under the hood.
+
+### 2. Wire up the capture template
+
+`total-recall-capture-init` takes the adapter and returns a configured capture
+function.  By default (`:register t`), it registers an org-capture template
+with key `"r"` / description `"Recall"`.  Pass `:register nil` to skip this:
+
+```elisp
+;; Register the "Recall" capture template (default)
+(total-recall-capture-init recall-adapter)
+
+;; Or: skip automatic registration (e.g., you want to add it manually)
+(total-recall-capture-init recall-adapter :register nil)
+```
+
+### Full example with `use-package`
+
+Putting it all together in a `:config` block:
+
+```elisp
+(use-package total-recall
+  :straight (total-recall :type git :host github :repo "MarselScheer/total-recall"
+                          :local-repo "/home/m/docker_fs/repos/total-recall")
+  :config
+  ;; Initialize persistent storage
+  (let ((adapter (total-recall-storage-init "~/.emacs.d/recall.db")))
+    ;; Register the "Recall" org-capture template
+    (total-recall-capture-init adapter)))
+```
+
+After loading, run `M-x org-capture` (or your org-capture keybinding) and
+select **"Recall"** (key `"r"`) to open the structured capture buffer.
+
+### Removing the capture template after loading
+
+When `total-recall-capture` loads with its default `:register` option, it adds
+an `org-capture-template` with the key `"r"` ("Recall"). If you need to
+unregister it (e.g., to re-register with different settings), evaluate:
+
+```elisp
+(setq org-capture-templates
+      (assoc-delete-all "r" org-capture-templates))
+```
+
+This removes only the "Recall" entry that the package registered (key `"r"`),
+leaving your other capture templates intact.
 
 ## Running Tests
 
@@ -53,13 +155,7 @@ mise run test
 ```
 
 This runs the ERT test suite in batch Emacs. All modules have their own test
-file under `tests/`:
-
-- `tests/test-item-model.el`
-- `tests/test-sched-model.el`
-- `tests/test-storage.el`
-- `tests/test-tags.el`
-- `tests/test-integration.el`
+file under `tests/`.
 
 ## Status
 

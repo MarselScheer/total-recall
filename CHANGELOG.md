@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] — 2026-09-06
+
+### Added
+
+- **Capture module** (`total-recall-capture.el`) — interactive capture workflow
+  with template-driven item creation, configurable capture templates, item
+  persistence, and inline tagging.
+- **Item validation** (`total-recall-item.el`) — `total-recall-make-item` now
+  validates mandatory `:term` and `:definition` keys and signals a
+  `user-error` when either is missing. Regression tests added under
+  `tests/test-item-model.el`.
+- **Capture template safety** (`total-recall-capture.el`) — the target file is
+  cleared before each capture to prevent stale content leakage; begin/end
+  markers delimit the newly-inserted template region; the file is cleared
+  after capture and the base buffer is marked unmodified to prevent
+  overwriting cleared content on save.
+- **Package entry point** (`total-recall.el`) — `require`-based entry point
+  that loads all modules; package is now installable via `package.el`.
+- **Tests** — ERT test suite for the capture module under `tests/test-capture.el`.
+- **README** — configuration guide with `use-package` example and
+  capture-template customization documentation.
+
+### Changed
+
+- `total-recall-storage.el` — extended to support capture module's persistence
+  needs.
+- `tests/test-integration.el` — updated to match new module layout.
+- `mise.toml` — project tooling updated.
+
+### Removed
+
+- Implementation details from capture specs (moved to `total-recall-capture.el`).
+
 ## [0.1.0] — 2026-09-05
 
 ### Added
@@ -36,6 +69,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   injection, testability-first approach).
 - OpenSpec configuration and directory scaffold.
 - Initial data model change proposal for `openspec/changes/`.
-
-[0.1.0]: https://github.com/m/total-recall/releases/tag/v0.1.0
-[0.0.1]: https://github.com/m/total-recall/releases/tag/v0.0.1
