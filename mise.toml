@@ -4,3 +4,7 @@ minimum_release_age = "30d"
 [tools]
 node = "latest"
 "npm:@fission-ai/openspec" = "1.11.0"
+
+[tasks.test]
+description = "Run ERT unit tests"
+run = "emacs --batch -L . -L tests -l total-recall-item -l total-recall-sched -l total-recall-storage -l total-recall-tags -l tests/test-item-model -l tests/test-sched-model -l tests/test-storage -l tests/test-tags -l tests/test-integration -f ert-run-tests-batch-and-exit"
