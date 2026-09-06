@@ -60,7 +60,7 @@ examples::
   - "In Java: constructor injection" :lang "Java"
 ```
 
-Comments are `#`-prefixed lines, stripped entirely before parsing.
+Comments are `;;`-prefixed lines, stripped entirely before parsing.
 
 ### Decision: Example cons cell format from buffer
 Example bullets parse as `("text" . (:key "val" ...))`. The text is the double-quoted string; remaining tokens on the line are alternating keyword/value pairs forming the props plist. Multi-line example text is supported via embedded newlines within the quoted string (continuation lines within examples indent further).

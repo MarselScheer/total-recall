@@ -5,7 +5,7 @@
 
 ## 2. Parser implementation
 
-- [ ] 2.1 Implement `total-recall-capture--parse` as a pure function: strip `#` comment lines, parse `key:: value` pairs, join indented continuation lines, omit blank fields, return nil for empty/comment-only input — verify the `test-capture.el` basic-fields, comments-ignored, continuation-lines, blank-fields-omitted, and empty-buffer scenarios pass
+- [ ] 2.1 Implement `total-recall-capture--parse` as a pure function: strip `;;` comment lines, parse `key:: value` pairs, join indented continuation lines, omit blank fields, return nil for empty/comment-only input — verify the `test-capture.el` basic-fields, comments-ignored, continuation-lines, blank-fields-omitted, and empty-buffer scenarios pass
 - [ ] 2.2 Add tag parsing: split space-separated `:keyword` tokens in the `tags::` value, intern each to a symbol — verify the tags-parse-to-symbol-list scenario passes
 - [ ] 2.3 Add numeric parsing: parse `depth::` values as integers — verify the depth-parses-to-integer scenario passes
 - [ ] 2.4 Add example parsing: parse bullet lines under `examples::` with quoted-string text and optional `:key val` props into cons cells `("text" . (:key "val"))`, supporting multi-line example text — verify the single-example, props-example, and multi-line-example scenarios pass

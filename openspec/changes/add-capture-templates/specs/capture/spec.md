@@ -28,7 +28,7 @@ The capture buffer SHALL display a set of fields with commented instructions, so
 
 #### Scenario: Buffer contains comments
 - **WHEN** the capture template opens
-- **THEN** the buffer SHALL contain `#`-prefixed comment lines providing field-level instructions
+- **THEN** the buffer SHALL contain `;;`-prefixed comment lines providing field-level instructions
 
 ### Requirement: Parser converts buffer text to an item plist
 The system SHALL provide a parser function that converts capture buffer text into a plist suitable for `total-recall-make-item`.
@@ -38,7 +38,7 @@ The system SHALL provide a parser function that converts capture buffer text int
 - **THEN** the parser SHALL return `(:term "voracious" :definition "extremely hungry")`
 
 #### Scenario: Comment lines are ignored
-- **WHEN** the buffer contains `# this is a comment\n term:: foo`
+- **WHEN** the buffer contains `;; this is a comment. Format: <key>:: <content>, like term:: bar\n term:: foo`
 - **THEN** the parser SHALL return a plist with `:term "foo"` and no `:comment` key
 
 #### Scenario: Continuation lines are joined
@@ -69,12 +69,12 @@ The examples field SHALL parse each bullet line into a cons cell `(text . props)
 - **THEN** the parser SHALL return `:examples (("simple text" . ()))`
 
 #### Scenario: Parse example with props
-- **WHEN** the buffer contains `examples::\n  - "In Python" :lang Python`
-- **THEN** the parser SHALL return `:examples (("In Python" . (:lang "Python")))`
+- **WHEN** the buffer contains `examples::\n  - "In Python" :lang Python :version 2`
+- **THEN** the parser SHALL return `:examples (("In Python" . (:lang "Python" :version "2")))`
 
 #### Scenario: Multi-line example text preserves line breaks
-- **WHEN** the buffer contains `examples::\n  - "line one\n    line two" :lang Python`
-- **THEN** the parser SHALL preserve the internal newline in the example text
+- **WHEN** the buffer contains `examples::\n  - "\nclass A:\n    a: int = 20" :lang Python`
+- **THEN** the parser SHALL return `:examples (("\nclass A:\n    a: int = 20" . (:lang "Python")))`
 
 ### Requirement: Commit parses, creates, and saves
 The commit function SHALL parse the buffer, create an item closure, and save it via the injected storage adapter.
