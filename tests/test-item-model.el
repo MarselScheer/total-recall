@@ -79,5 +79,28 @@
     (should (> (length json-string) 0))
     (should (string-match-p "voracious" json-string))))
 
+;; ---------------------------------------------------------------------------
+;; Validation — missing mandatory keys
+;; ---------------------------------------------------------------------------
+
+(ert-deftest test-item-missing-term-signals-error ()
+  "make-item signals an error when :term is missing."
+  (should-error (total-recall-make-item '(:definition "eating large amounts"))
+                :type 'error))
+
+(ert-deftest test-item-missing-definition-signals-error ()
+  "make-item signals an error when :definition is missing."
+  (should-error (total-recall-make-item '(:term "voracious"))
+                :type 'error))
+
+(ert-deftest test-item-missing-term-and-definition-signals-error ()
+  "make-item signals an error when both :term and :definition are missing."
+  (should-error (total-recall-make-item '(:tags (:vocabulary)))
+                :type 'error))
+
+(ert-deftest test-item-valid-input-still-works ()
+  "Regression: valid input with both :term and :definition still creates an item."
+  (should (functionp (total-recall-make-item '(:term "voracious" :definition "eating large amounts")))))
+
 (provide 'test-item-model)
 ;;; test-item-model.el ends here

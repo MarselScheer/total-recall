@@ -26,6 +26,10 @@ The returned closure recognizes three commands:
 - (funcall ITEM 'get KEY)    — return the value for KEY
 - (funcall ITEM 'set KEY VAL) — set KEY to VAL and update :modified
 - (funcall ITEM 'serialize)   — return the internal plist"
+  (unless (plist-member data :term)
+    (user-error "Item must have a :term"))
+  (unless (plist-member data :definition)
+    (user-error "Item must have a :definition"))
   (let* ((now (total-recall--timestamp))
          (id (or (plist-get data :id) (total-recall--generate-id)))
          (data (copy-sequence data)))
