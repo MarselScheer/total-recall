@@ -46,6 +46,52 @@ testability, dependency injection, closure-based composition, and avoiding
 CLOS/classes. Every function is designed to be tested in isolation without
 mockist trickery.
 
+## Installation
+
+### Prerequisites
+
+- Emacs 26.1 or later
+- [straight.el](https://github.com/radian-software/straight.el) bootstrap (if not already set up)
+
+### Via straight.el + use-package
+
+Add the following to your Emacs config:
+
+```elisp
+(use-package total-recall
+  :straight (total-recall :type git :host github
+                          :repo "MarselScheer/total-recall"
+                          :branch "main"))
+```
+
+### Local development checkout
+
+Use the `:local-repo` keyword to point straight.el at an
+existing clone on disk. This is useful when you're actively developing the
+package and want to avoid re-cloning.
+
+```elisp
+;; Clone the repo somewhere, e.g. /home/user/code/total-recall
+;; Then tell straight.el about it:
+(use-package total-recall
+  :straight (total-recall :type git :host github :repo "MarselScheer/total-recall"
+                          :local-repo "/home/user/code/total-recall"))
+```
+
+### Removing the capture template after loading
+
+When `total-recall-capture` loads with its default `:register` option, it adds
+an `org-capture-template` with the key `"r"` ("Recall"). If you need to
+unregister it (e.g., to re-register with different settings), evaluate:
+
+```elisp
+(setq org-capture-templates
+      (assoc-delete-all "r" org-capture-templates))
+```
+
+This removes only the "Recall" entry that the package registered (key `"r"`),
+leaving your other capture templates intact.
+
 ## Running Tests
 
 ```bash
@@ -53,13 +99,7 @@ mise run test
 ```
 
 This runs the ERT test suite in batch Emacs. All modules have their own test
-file under `tests/`:
-
-- `tests/test-item-model.el`
-- `tests/test-sched-model.el`
-- `tests/test-storage.el`
-- `tests/test-tags.el`
-- `tests/test-integration.el`
+file under `tests/`.
 
 ## Status
 
