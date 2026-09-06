@@ -218,10 +218,10 @@ as a new memorization item and returns the item id."
                       (plist-get args :register)
                     t)))
     (when register
-      ;; Ensure the target file exists so org-capture doesn't
-      ;; prompt for a filename interactively.
-      (unless (file-exists-p "/tmp/recall-capture.txt")
-        (with-temp-file "/tmp/recall-capture.txt" (insert "")))
+      ;; Ensure the target file exists and is empty so org-capture
+      ;; doesn't prompt for a filename interactively or leak stale
+      ;; content from a previous capture.
+      (with-temp-file "/tmp/recall-capture.txt" (insert ""))
       (add-to-list 'org-capture-templates
                    `("r" "Recall" plain
                      (file "/tmp/recall-capture.txt")
@@ -239,11 +239,39 @@ as a new memorization item and returns the item id."
                        "notes:: \n"
                        ";; analogy: comparison to something familiar\n"
                        "analogy:: \n")
+                     :no-save t
                      :before-finalize
                      ,(lambda ()
-                        (let ((content (buffer-substring-no-properties
-                                        (point-min) (point-max))))
-                          (total-recall-capture--commit adapter content)))
+                        ;; Use begin/end markers inserted by
+                        ;; `org-capture-mark-kill-region' — these delimit
+                        ;; only the newly-inserted template region,
+                        ;; excluding any old content that accumulated
+                        ;; in the file from previous captures.
+                        ;; Fall back to the whole buffer when markers
+                        ;; are unavailable (e.g. testing the lambda in
+                        ;; isolation).
+                        (let* ((beg (and (fboundp 'org-capture-get)
+                                        (org-capture-get :begin-marker 'local)))
+                               (end (and (fboundp 'org-capture-get)
+                                        (org-capture-get :end-marker 'local)))
+                               (effective-beg (or beg (point-min)))
+                               (effective-end (or end (point-max)))
+                               (content (buffer-substring-no-properties
+                                         effective-beg effective-end)))
+                          (total-recall-capture--commit adapter content))
+                        ;; Clear the file on disk so the next capture
+                        ;; starts fresh.
+                        (with-temp-file "/tmp/recall-capture.txt"
+                          (insert ""))
+                        ;; Mark the base buffer as unmodified so the
+                        ;; subsequent (save-buffer) calls in
+                        ;; `org-capture-finalize' become no-ops
+                        ;; instead of overwriting the cleared file
+                        ;; with old content.
+                        (let ((base (buffer-base-buffer (current-buffer))))
+                          (when base
+                            (with-current-buffer base
+                              (set-buffer-modified-p nil)))))
                      :kill-buffer t)))
     (lambda (buffer-string)
       "Run the capture flow on BUFFER-STRING."
