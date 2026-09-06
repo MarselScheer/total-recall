@@ -7,4 +7,4 @@ node = "latest"
 
 [tasks.test]
 description = "Run ERT unit tests"
-run = "emacs --batch -L . -L tests -l total-recall-item -l total-recall-sched -l total-recall-storage -l total-recall-tags -l tests/test-item-model -l tests/test-sched-model -l tests/test-storage -l tests/test-tags -l tests/test-integration -f ert-run-tests-batch-and-exit"
+run = "emacs --batch -L . -L tests $(for f in tests/test-*.el; do echo -n ' -l '${f%.el}; done) -f ert-run-tests-batch-and-exit"
