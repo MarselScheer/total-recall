@@ -96,3 +96,16 @@ When the user selects "both" as the direction, each due item SHALL appear twice 
 #### Scenario: Both mode respects independent due dates
 - **WHEN** an item's forward schedule is due but its backward schedule is not
 - **THEN** "both" mode SHALL include only the forward entry for that item
+
+### Requirement: Queue is shuffled before the session starts
+The session queue SHALL be randomly shuffled before entering the training buffer, regardless of direction mode.
+
+#### Scenario: Queue is shuffled at session start
+- **WHEN** the session queue is built
+- **THEN** the order of items in the queue SHALL be randomized
+- **AND** an item's position in the queue SHALL not correspond to its due-date order or database insertion order
+
+#### Scenario: Both-mode queue preserves shuffle across directions
+- **WHEN** "both" mode produces 6 entries (3 items × 2 directions)
+- **THEN** the 6 entries SHALL be shuffled as a single flat list
+- **AND** forward and backward entries for the same item SHALL not be adjacent (except by chance)

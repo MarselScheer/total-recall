@@ -104,6 +104,12 @@ Key constraints from the codebase design principles (dependency injection, closu
 - **Mid-session, new items become due**: The queue is fixed at session start, so items that fall due during a session are not included. **Mitigation:** Sessions are short; the user just starts another session.
 - **Single-tag filter limits power users**: Cannot train on `:german AND :vocabulary`. **Mitigation:** Declared non-goal; easy to extend later with a tag-expression parser.
 
-## Open Questions
+### Decision 9: Queue is shuffled at session start, not sorted by due date
 
-- Should the queue be shuffled or sorted by next-review time? A fair assumption: sort by next-review ascending (most overdue first). Confirm at implementation.
+**Choice:** The session queue is shuffled (random order) before entering the training buffer.
+
+**Alternatives considered:**
+- Sort by next-review ascending (most overdue first) — prioritizes stale cards but creates a predictable, boring order and doesn't interleave items from different tags or directions.
+- No shuffle, insert in query order — depends on database implementation order, which is undefined.
+
+**Rationale:** Shuffling ensures variety within a session — adjacent cards test different items, reducing interference and making each session feel fresh. Because all items in the queue are due (past their next-review), ordering by overdue time has marginal benefit: any of them are fair game for review. Shuffling also simplifies the implementation since the queue is built once at start and order doesn't matter.
