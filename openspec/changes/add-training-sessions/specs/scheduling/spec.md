@@ -40,10 +40,10 @@ The storage adapter SHALL support querying schedule records for a given directio
 The system SHALL provide a pure function `total-recall-sched--sm2-grade` that takes a quality score and a schedule closure and returns an updated schedule plist. Quality SHALL be 0 (wrong) or 5 (correct).
 
 #### Scenario: Correct answer advances the schedule
-- **WHEN** `total-recall-sched--sm2-grade` is called with quality 5 on a first-review schedule (repetitions = 0)
+- **WHEN** `total-recall-sched--sm2-grade` is called with quality 5 on a first-review schedule (repetitions = 0, ease-factor = 2.5)
 - **THEN** the returned plist SHALL have `:repetitions` equal to 1
 - **AND** `:interval` SHALL be 1.0
-- **AND** `:ease-factor` SHALL be >= 2.5
+- **AND** `:ease-factor` SHALL be 2.6
 
 #### Scenario: Correct answer on second review sets 6-day interval
 - **WHEN** `total-recall-sched--sm2-grade` is called with quality 5 on a schedule with repetitions = 1
@@ -55,14 +55,16 @@ The system SHALL provide a pure function `total-recall-sched--sm2-grade` that ta
 - **THEN** the returned plist SHALL have `:interval` equal to 15.0
 
 #### Scenario: Wrong answer resets the schedule
-- **WHEN** `total-recall-sched--sm2-grade` is called with quality 0
+- **WHEN** `total-recall-sched--sm2-grade` is called with quality 0 on a schedule with ease-factor = 2.5
 - **THEN** the returned plist SHALL have `:repetitions` equal to 0
 - **AND** `:interval` SHALL be 0.0
 - **AND** `:lapses` SHALL be incremented by 1
+- **AND** `:ease-factor` SHALL be 1.7
 
 #### Scenario: Ease factor has a minimum floor
-- **WHEN** SM-2 quality calculations would produce an ease-factor below 1.3
-- **THEN** the ease factor SHALL be clamped to 1.3
+- **WHEN** `total-recall-sched--sm2-grade` is called with quality 0 on a schedule with ease-factor = 1.5
+- **THEN** the SM-2 formula raw result SHALL be 0.7
+- **AND** the returned plist SHALL have `:ease-factor` equal to 1.3
 
 #### Scenario: Schedule's last-review is updated after grading
 - **WHEN** `total-recall-sched--sm2-grade` is called with any quality

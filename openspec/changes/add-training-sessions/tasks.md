@@ -1,8 +1,8 @@
 ## 1. Schedule — direction field and SM-2 grading
 
 - [ ] 1.1 Add `:direction` field to `total-recall-make-schedule` (default `"forward"`) and update existing tests to verify the default and that `"backward"` is accepted
-- [ ] 1.2 Implement `total-recall-sched--sm2-grade` as a pure function accepting quality (0 or 5) and a schedule closure, returning an updated schedule plist with SM-2 rules (quality 5 advances, quality 0 resets + lapses, ease-factor minimum 1.3, last-review/next-review timestamps)
-- [ ] 1.3 Add tests for `total-recall-sched--sm2-grade` covering: correct first review sets interval 1.0, correct second review sets interval 6.0, correct subsequent reviews multiply interval by ease-factor, wrong answer resets repetitions/interval and increments lapses, ease-factor floor at 1.3, and last-review/next-review are updated
+- [ ] 1.2 Implement `total-recall-sched--sm2-grade` as a pure function accepting quality (0 or 5) and a schedule closure, returning an updated schedule plist with SM-2 rules (quality 5 advances interval/repetitions/EF, quality 0 resets + lapses + decreases EF, ease-factor minimum 1.3, last-review/next-review timestamps)
+- [ ] 1.3 Add tests for `total-recall-sched--sm2-grade` covering: correct first review sets interval 1.0 and EF increases to 2.6, correct second review sets interval 6.0, correct subsequent reviews multiply interval by ease-factor, wrong answer resets repetitions/interval/increments lapses and EF decreases to 1.7, ease-factor floor at 1.3, and last-review/next-review are updated
 
 ## 2. Storage — dual-track schedule schema and direction-aware queries
 

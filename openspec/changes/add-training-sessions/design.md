@@ -113,3 +113,16 @@ Key constraints from the codebase design principles (dependency injection, closu
 - No shuffle, insert in query order — depends on database implementation order, which is undefined.
 
 **Rationale:** Shuffling ensures variety within a session — adjacent cards test different items, reducing interference and making each session feel fresh. Because all items in the queue are due (past their next-review), ordering by overdue time has marginal benefit: any of them are fair game for review. Shuffling also simplifies the implementation since the queue is built once at start and order doesn't matter.
+
+### Decision 10: SM-2 ease-factor follows the standard formula with 1.3 floor
+
+**Choice:** `EF' = EF + (0.1 - (5 - q) × (0.08 + (5 - q) × 0.02))`, clamped to a minimum of 1.3.
+
+- Quality 5 (correct): `EF' = EF + 0.1` — ease factor increases slightly.
+- Quality 0 (wrong): `EF' = EF - 0.8` — ease factor decreases significantly.
+
+**Alternatives considered:**
+- Fixed ease-factor — simpler but doesn't adapt to card difficulty.
+- Different delta values — standard SM-2 formula is well-studied and predictable.
+
+**Rationale:** Documents the exact formula so all scenarios share a single source of truth. The 1.3 floor prevents ease-factor from dropping so low that intervals never grow. This parallels the existing "minimum floor" scenario and makes the EF behavior testable without reverse-engineering the code.
