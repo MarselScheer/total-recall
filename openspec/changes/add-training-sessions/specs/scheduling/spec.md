@@ -37,7 +37,7 @@ The storage adapter SHALL support querying schedule records for a given directio
 ## ADDED Requirements
 
 ### Requirement: SM-2 binary grading evaluates a review attempt
-The system SHALL provide a pure function `total-recall-sched--sm2-grade` that takes a quality score and a schedule closure and returns an updated schedule plist. Quality SHALL be 0 (wrong) or 5 (correct).
+The system SHALL provide a pure function `total-recall-sched--sm2-grade` that takes a quality score and a schedule closure and returns an updated schedule plist. Quality SHALL be 0 (wrong) or 5 (correct). A correct answer (quality 5) SHALL increment `:repetitions` by 1 regardless of the current value. A wrong answer (quality 0) SHALL reset `:repetitions` to 0.
 
 #### Scenario: Correct answer advances the schedule
 - **WHEN** `total-recall-sched--sm2-grade` is called with quality 5 on a first-review schedule (repetitions = 0, ease-factor = 2.5)
@@ -52,7 +52,8 @@ The system SHALL provide a pure function `total-recall-sched--sm2-grade` that ta
 
 #### Scenario: Correct answer on subsequent reviews multiplies interval by ease-factor
 - **WHEN** `total-recall-sched--sm2-grade` is called with quality 5 on a schedule with repetitions = 2 and interval = 6.0 and ease-factor = 2.5
-- **THEN** the returned plist SHALL have `:interval` equal to 15.0
+- **THEN** the returned plist SHALL have `:repetitions` equal to 3
+- **AND** `:interval` SHALL be 15.0
 
 #### Scenario: Wrong answer resets the schedule
 - **WHEN** `total-recall-sched--sm2-grade` is called with quality 0 on a schedule with ease-factor = 2.5
