@@ -4,12 +4,12 @@
 Every schedule SHALL have `:item-id`, `:direction`, `:interval`, `:ease-factor`, `:repetitions`, `:next-review`, and `:lapses`.
 
 #### Scenario: New schedule has default values
-- **WHEN** a new schedule is created for an item with direction `"forward"`
+- **WHEN** a new schedule is created
 - **THEN** `:interval` SHALL be 0.0
 - **AND** `:ease-factor` SHALL be 2.5
 - **AND** `:repetitions` SHALL be 0
 - **AND** `:lapses` SHALL be 0
-- **AND** `:direction` SHALL be `"forward"`
+- **AND** `:direction` SHALL match the direction passed at creation
 
 #### Scenario: Backward schedule has correct direction
 - **WHEN** a new schedule is created for an item with direction `"backward"`
