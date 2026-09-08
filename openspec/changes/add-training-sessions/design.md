@@ -87,6 +87,16 @@ Key constraints from the codebase design principles (dependency injection, closu
 
 **Rationale:** Minimal config surface. The prompts are interactive and self-explanatory. Future enhancement could add customization options, but this follows "start simple."
 
+### Decision 8: Wrong cards are re-queued at the end of the session
+
+**Choice:** When the user grades a card wrong (`w`), the card is placed back at the end of the session queue. It appears again later in the same session.
+
+**Alternatives considered:**
+- No re-queueing — simpler but gives the user no chance to correct a missed card within the session.
+- Immediate retry — interrupts the flow and doesn't test spaced recall.
+
+**Rationale:** Re-queueing at the end gives the user a chance to recall the same card again before the session ends, which reinforces learning. This matches Anki's "again" behavior. The user keeps the same card in memory, so the second encounter tests whether the material has been consolidated.
+
 ## Risks / Trade-offs
 
 - **Schema migration for existing users**: The `schedule` table gains a `direction` column and a composite PK. Existing single-track data has no direction — these rows are orphaned after migration. **Mitigation:** Since this is a learning project with no production users, the migration is a one-time `DROP TABLE IF EXISTS schedule` / recreate. For a real rollout, we'd migrate existing rows with direction "forward".
@@ -97,4 +107,3 @@ Key constraints from the codebase design principles (dependency injection, closu
 ## Open Questions
 
 - Should the queue be shuffled or sorted by next-review time? A fair assumption: sort by next-review ascending (most overdue first). Confirm at implementation.
-- Should a wrong card be re-queued later in the same session (like Anki's "again" puts it at the end)? We'll start without re-queueing — simple and clean.

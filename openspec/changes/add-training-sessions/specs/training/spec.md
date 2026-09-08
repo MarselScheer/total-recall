@@ -56,6 +56,12 @@ The system SHALL accept binary grading via keybindings: `c` for correct, `w` for
 - **THEN** `total-recall-sched--sm2-grade` SHALL be called with quality 0 on the current card's schedule
 - **AND** the updated schedule SHALL be persisted
 
+#### Scenario: Grade wrong re-queues the card at end of session
+- **WHEN** the user presses `w` after revealing the answer
+- **THEN** the card SHALL be placed back at the end of the session queue
+- **AND** the card SHALL appear again after all remaining cards have been graded
+- **AND** the summary at session end SHALL reflect only the final grade for that card
+
 #### Scenario: Grading advances to the next card
 - **WHEN** any grade is given
 - **THEN** the buffer SHALL advance to the next card in the queue
