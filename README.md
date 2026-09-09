@@ -23,6 +23,7 @@ following a closure-based, dependency-injected design:
 | **Scheduling** | `total-recall-sched.el` | Spaced-repetition scheduling algorithm |
 | **Storage** | `total-recall-storage.el` | SQLite persistence layer (adapter pattern) |
 | **Tags** | `total-recall-tags.el` | Tag-based filtering and organization |
+| **Training** | `total-recall-train.el` | Interactive review sessions with card display and binary grading |
 
 ## Why OpenSpec?
 
@@ -125,10 +126,12 @@ Putting it all together in a `:config` block:
   :straight (total-recall :type git :host github :repo "MarselScheer/total-recall"
                           :local-repo "/home/m/docker_fs/repos/total-recall")
   :config
-  ;; Initialize persistent storage
-  (let ((adapter (total-recall-storage-init "~/.emacs.d/recall.db")))
+  (let* ((recall-db "~/.emacs.d/recall.db")
+         (adapter (total-recall-storage-init recall-db)))
     ;; Register the "Recall" org-capture template
-    (total-recall-capture-init adapter)))
+    (total-recall-capture-init adapter)
+    ;; Point the training session at the same database
+    (setq total-recall-train-db-path recall-db)))
 ```
 
 After loading, run `M-x org-capture` (or your org-capture keybinding) and
@@ -147,6 +150,49 @@ unregister it (e.g., to re-register with different settings), evaluate:
 
 This removes only the "Recall" entry that the package registered (key `"r"`),
 leaving your other capture templates intact.
+
+## Training Sessions
+
+Once you have items with schedule entries, you can review them interactively.
+
+### 3. Set a database path (optional)
+
+By default, `M-x total-recall-train` uses an in-memory database. Set
+`total-recall-train-db-path` to persist your data:
+
+```elisp
+;; In your config, before starting a session
+(setq total-recall-train-db-path "~/.emacs.d/recall.db")
+```
+
+### 4. Start a session
+
+```elisp
+M-x total-recall-train
+```
+
+The command prompts you for:
+
+- **Direction** — `f` (forward: term → definition), `b` (backward: definition → term),
+  or `t` (both: review in both directions, independently scheduled).
+- **Tag** — optional filter; press `RET` for all items. Uses `completing-read`
+  against the tags present in your database.
+
+If there are no items due, it shows a message. Otherwise, it opens a training
+buffer where you:
+
+| Key | Action |
+|---|---|
+| `SPC` | Reveal the answer |
+| `c` | Grade correct |
+| `w` | Grade wrong |
+| `q` | Quit the session early |
+
+Wrong answers are re-queued and shown again before the session ends. When the
+queue is exhausted, a summary with correct/wrong counts is displayed.
+
+Pass a prefix argument (`C-u M-x total-recall-train`) to pick a database file
+at session time, overriding `total-recall-train-db-path`.
 
 ## Running Tests
 

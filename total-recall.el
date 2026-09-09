@@ -21,6 +21,7 @@
 (require 'total-recall-sched)
 (require 'total-recall-storage)
 (require 'total-recall-capture)
+(require 'total-recall-train)
 
 (provide 'total-recall)
 
