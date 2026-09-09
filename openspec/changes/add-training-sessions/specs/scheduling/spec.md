@@ -37,7 +37,23 @@ The storage adapter SHALL support querying schedule records for a given directio
 ## ADDED Requirements
 
 ### Requirement: SM-2 binary grading evaluates a review attempt
-The system SHALL provide a pure function `total-recall-sched--sm2-grade` that takes a quality score and a schedule closure and returns an updated schedule plist. Quality SHALL be 0 (wrong) or 5 (correct). A correct answer (quality 5) SHALL increment `:repetitions` by 1 regardless of the current value. A wrong answer (quality 0) SHALL reset `:repetitions` to 0.
+The system SHALL provide a pure function `total-recall-sched--sm2-grade` that takes a quality score and a schedule closure and returns an updated schedule plist. Quality SHALL be 0 (wrong) or 5 (correct). A correct answer (quality 5) SHALL increment `:repetitions` by 1 regardless of the current value. A wrong answer (quality 0) SHALL reset `:repetitions` to 0 and SHALL increment `:lapses` by 1.
+
+The interval SHALL follow the SM-2 progression driven by the updated `:repetitions`:
+
+- After a correct answer that leaves `:repetitions` at 1, `:interval` SHALL be 1.0.
+- After a correct answer that leaves `:repetitions` at 2, `:interval` SHALL be 6.0.
+- After a correct answer that leaves `:repetitions` at 3 or more, `:interval` SHALL be the previous `:interval` multiplied by the current ease-factor.
+- After a wrong answer, `:interval` SHALL be reset to 0.0.
+
+The ease-factor update SHALL follow the standard SM-2 formula:
+
+`EF' = EF + (0.1 - (5 - q) × (0.08 + (5 - q) × 0.02))`
+
+where `q` is the quality score (0 or 5). The result SHALL be clamped to a minimum of 1.3.
+
+- Quality 5 (correct): `EF' = EF + 0.1` — ease factor increases slightly.
+- Quality 0 (wrong): `EF' = EF - 0.8` — ease factor decreases significantly.
 
 #### Scenario: Correct answer advances the schedule
 - **WHEN** `total-recall-sched--sm2-grade` is called with quality 5 on a first-review schedule (repetitions = 0, ease-factor = 2.5)
