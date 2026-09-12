@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] — 2026-09-12
+
+### Added
+
+- **Training module** (`total-recall-train.el`) — interactive review sessions
+  with card display, answer reveal, and binary grading (correct/wrong).
+- **Dual-track scheduling** — schedule records now carry a `direction` field
+  (`forward` / `backward`), enabling independent spaced-repetition tracking
+  for term→definition and definition→term recall.
+- **SM-2 binary grading** (`total-recall-sched--sm2-grade`) — pure SM-2
+  function mapping correct→quality 5 (advances interval) and wrong→quality 0
+  (resets interval, increments lapses). Ease-factor follows the standard SM-2
+  formula with 1.3 floor.
+- **"Both" direction mode** — each due item appears twice (forward + backward)
+  in the session queue, with independent schedule tracks.
+- **Tag filtering** — optional single-tag filter at session start via
+  `completing-read`.
+- **Wrong-card re-queueing** — cards graded wrong are placed back at the end
+  of the queue and reappear before the session ends.
+- **Queue shuffling** — session queue is randomly shuffled at start for
+  variety.
+- **Session summary** — correct/wrong counts displayed at session end.
+- **Tests** — 590-line ERT test suite for the training module under
+  `tests/test-train.el`.
+
+### Changed
+
+- `total-recall-sched.el` — schedule data model accepts `:direction` field
+  (default `"forward"`); added `total-recall-sched--sm2-grade` pure function.
+- `total-recall-storage.el` — `schedule` table gains `direction` column with
+  composite primary key `(item_id, direction)`; `:load-schedule` and
+  `:save-schedule` are direction-aware; `:query-due` accepts a direction
+  parameter.
+- `total-recall.el` — added `(require 'total-recall-train)` for the new module.
+- `README.md` — added training session usage documentation.
+- `tests/test-sched-model.el` — updated for direction-aware schedules.
+- `tests/test-storage.el` — updated for dual-track schema and
+  direction-aware queries.
+- `tests/test-integration.el` — minor alignment with new module layout.
+
+### Documentation
+
+- **OpenSpec specs** — new `openspec/specs/training/spec.md` for training
+  requirements; updated `scheduling/spec.md` and `storage/spec.md` for
+  dual-track and SM-2 requirements.
+
 ## [0.2.0] — 2026-09-06
 
 ### Added
