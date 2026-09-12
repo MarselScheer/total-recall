@@ -4,7 +4,7 @@
 
 ;; Author: Marsel Scheer
 ;; URL: https://github.com/MarselScheer/total-recall
-;; Version: 0.1.0
+;; Version: 0.3.0
 ;; Package-Requires: ((emacs "26.1"))
 ;; Keywords: convenience, memory, tools
 
@@ -21,6 +21,7 @@
 (require 'total-recall-sched)
 (require 'total-recall-storage)
 (require 'total-recall-capture)
+(require 'total-recall-train)
 
 (provide 'total-recall)
 

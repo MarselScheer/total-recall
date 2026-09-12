@@ -62,7 +62,7 @@ load it back, and assert all data is preserved."
                      (plist-get original-data :modified))))
 
     ;; Verify schedule loaded back
-    (let ((loaded-sched (funcall (plist-get adapter :load-schedule) id)))
+    (let ((loaded-sched (funcall (plist-get adapter :load-schedule) id "forward")))
       (should loaded-sched)
       (should (equal (funcall loaded-sched 'get :item-id) id)))))
 

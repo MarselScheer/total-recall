@@ -1,10 +1,4 @@
-# Scheduling Specification
-
-## Purpose
-
-Defines the scheduling record that tracks spaced-repetition state for each item — interval, ease factor, repetition count, and review timestamps — enabling the SM-2 algorithm (implementation in a future change).
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Scheduling record has required fields
 Every schedule SHALL have `:item-id`, `:direction`, `:interval`, `:ease-factor`, `:repetitions`, `:next-review`, and `:lapses`.
@@ -17,35 +11,17 @@ Every schedule SHALL have `:item-id`, `:direction`, `:interval`, `:ease-factor`,
 - **AND** `:lapses` SHALL be 0
 - **AND** `:direction` SHALL match the direction passed at creation
 
-#### Scenario: New schedule has a next-review timestamp `[SC-2026-09-09_18-29-07-03]`
-- **WHEN** a new schedule is created
-- **THEN** `:next-review` SHALL be a non-nil string (ISO-8601 timestamp)
-
 #### Scenario: Backward schedule has correct direction `[SC-2026-09-09_18-29-07-02]`
 - **WHEN** a new schedule is created for an item with direction `"backward"`
 - **THEN** `:direction` SHALL be `"backward"`
 
+#### Scenario: New schedule has a next-review timestamp `[SC-2026-09-09_18-29-07-03]`
+- **WHEN** a new schedule is created
+- **THEN** `:next-review` SHALL be a non-nil string (ISO-8601 timestamp)
+
 #### Scenario: Item id is available on schedule `[SC-2026-09-09_18-29-07-04]`
 - **WHEN** a schedule is created for item with id "abc-123"
 - **THEN** `(schedule 'get :item-id)` SHALL equal "abc-123"
-
-### Requirement: Scheduling record supports get and set
-A schedule SHALL support the same `'get` and `'set` dispatch as items.
-
-#### Scenario: Get value from schedule
-- **WHEN** `(schedule 'get :interval)` is called
-- **THEN** it SHALL return the current interval
-
-#### Scenario: Set value on schedule
-- **WHEN** `(schedule 'set :repetitions 3)` is called
-- **THEN** `(schedule 'get :repetitions)` SHALL equal 3
-
-### Requirement: Scheduling record supports serialize
-A schedule SHALL support the `'serialize` command to return its raw plist.
-
-#### Scenario: Serialize returns schedule plist
-- **WHEN** `(schedule 'serialize)` is called
-- **THEN** it SHALL return a plist with all scheduling keys
 
 ### Requirement: Items due for review are queryable by direction
 The storage adapter SHALL support querying schedule records for a given direction where `:next-review` is in the past or now.
@@ -58,12 +34,7 @@ The storage adapter SHALL support querying schedule records for a given directio
 - **WHEN** no schedule records for direction `"forward"` have `next-review` in the past
 - **THEN** the due-items query for `"forward"` SHALL return an empty list
 
-### Requirement: Deleting an item deletes its schedule
-Deleting an item from the storage SHALL also delete its associated schedule record.
-
-#### Scenario: Schedule is cleaned up on item deletion
-- **WHEN** an item is deleted from storage
-- **THEN** querying for its schedule SHALL return nil
+## ADDED Requirements
 
 ### Requirement: SM-2 binary grading evaluates a review attempt
 The system SHALL provide a pure function `total-recall-sched--sm2-grade` that takes a quality score and a schedule closure and returns an updated schedule plist. Quality SHALL be 0 (wrong) or 5 (correct). A correct answer (quality 5) SHALL increment `:repetitions` by 1 regardless of the current value. A wrong answer (quality 0) SHALL reset `:repetitions` to 0 and SHALL increment `:lapses` by 1.

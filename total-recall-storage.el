@@ -63,9 +63,9 @@ Returns a plist of adapter functions:
   :load-item      (fn id) → item-closure | nil
   :save-item      (fn item) → nil
   :delete-item    (fn id) → nil
-  :load-schedule  (fn id) → schedule-closure | nil
+  :load-schedule  (fn id direction) → schedule-closure | nil
   :save-schedule  (fn schedule) → nil
-  :query-due      (fn) → list of item-closure
+  :query-due      (fn direction) → list of item-closure
   :query-by-tag   (fn tag) → list of item-closure
   :list-all-tags  (fn) → list of symbols
   :query-all      (fn) → list of item-id"
@@ -86,13 +86,15 @@ Returns a plist of adapter functions:
       created    TEXT NOT NULL,
       modified   TEXT NOT NULL)")
     (sqlite-execute db "CREATE TABLE IF NOT EXISTS schedule (
-      item_id     TEXT PRIMARY KEY REFERENCES items(id) ON DELETE CASCADE,
+      item_id     TEXT NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+      direction   TEXT NOT NULL DEFAULT 'forward',
       interval    REAL NOT NULL DEFAULT 0,
       ease_factor REAL NOT NULL DEFAULT 2.5,
       repetitions INTEGER NOT NULL DEFAULT 0,
       next_review TEXT NOT NULL,
       last_review TEXT DEFAULT NULL,
-      lapses      INTEGER NOT NULL DEFAULT 0)")
+      lapses      INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (item_id, direction))")
     (sqlite-execute db "CREATE TABLE IF NOT EXISTS related (
       item_id    TEXT NOT NULL REFERENCES items(id) ON DELETE CASCADE,
       related_id TEXT NOT NULL REFERENCES items(id) ON DELETE CASCADE,
@@ -143,15 +145,17 @@ Returns a plist of adapter functions:
             "Delete item by ID from the DB. CASCADE removes schedule and related records."
             (sqlite-execute db "DELETE FROM items WHERE id = ?" (list id)))
           :load-schedule
-          (lambda (id)
-            "Load schedule by item-id, returning a schedule closure or nil."
+          (lambda (id direction)
+            "Load schedule by item-id and direction, returning a schedule closure or nil."
             (let ((rows (sqlite-select db
-                          "SELECT item_id, interval, ease_factor, repetitions, next_review, last_review, lapses FROM schedule WHERE item_id = ?"
-                          (list id))))
+                          "SELECT item_id, direction, interval, ease_factor, repetitions, next_review, last_review, lapses FROM schedule WHERE item_id = ? AND direction = ?"
+                          (list id direction))))
               (when-let ((row (car rows)))
-                (pcase-let ((`(,db-item-id ,interval ,ease_factor ,repetitions ,next_review ,last_review ,lapses) row))
+                (pcase-let ((`(,db-item-id ,db-direction ,interval ,ease_factor ,repetitions ,next_review ,last_review ,lapses) row))
                   (total-recall-make-schedule
-                   (list :item-id db-item-id :interval interval
+                   (list :item-id db-item-id
+                         :direction db-direction
+                         :interval interval
                          :ease-factor ease_factor :repetitions repetitions
                          :next-review next_review
                          :last-review last_review
@@ -162,15 +166,35 @@ Returns a plist of adapter functions:
             "Save SCHEDULE (a closure) to DB via INSERT OR REPLACE."
             (let* ((data (funcall schedule 'serialize)))
               (sqlite-execute db
-                "INSERT OR REPLACE INTO schedule (item_id, interval, ease_factor, repetitions, next_review, last_review, lapses) VALUES (?, ?, ?, ?, ?, ?, ?)"
+                "INSERT OR REPLACE INTO schedule (item_id, direction, interval, ease_factor, repetitions, next_review, last_review, lapses) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
                 (list (plist-get data :item-id)
+                      (plist-get data :direction)
                       (plist-get data :interval)
                       (plist-get data :ease-factor)
                       (plist-get data :repetitions)
                       (plist-get data :next-review)
                       (plist-get data :last-review)
                       (plist-get data :lapses)))))
-          :query-due (lambda () nil)
+          :query-due
+          (lambda (direction)
+            "Return item closures whose schedule for DIRECTION is due (next-review <= now)."
+            (let* ((now (format-time-string "%Y-%m-%dT%H:%M:%S.%6N%z" (current-time)))
+                   (rows (sqlite-select db
+                          "SELECT DISTINCT items.id, items.term, items.definition, items.tags, items.depth, items.examples, items.analogy, items.notes, items.created, items.modified
+                           FROM schedule JOIN items ON items.id = schedule.item_id
+                           WHERE schedule.direction = ? AND schedule.next_review <= ?"
+                          (list direction now))))
+              (cl-loop for row in rows collect
+                       (pcase-let ((`(,db-id ,term ,definition ,tags ,depth ,examples ,analogy ,notes ,created ,modified) row))
+                         (total-recall-make-item
+                          (list :id db-id :term term :definition definition
+                                :tags (mapcar #'intern (json-read-from-string tags))
+                                :depth depth
+                                :examples (total-recall--examples-decode examples)
+                                :analogy analogy
+                                :notes notes
+                                :created created
+                                :modified modified))))))
           :query-by-tag
           (lambda (tag)
             "Query items that have the given TAG (symbol)."
