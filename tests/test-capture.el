@@ -106,18 +106,32 @@
 ;; ---------------------------------------------------------------------------
 
 (ert-deftest test-capture-commit-saves-item ()
-  "Commit parses buffer, creates item, saves via adapter, returns id."
+  "Commit parses buffer, creates item, saves via adapter, returns id.
+
+Covers [SC-2026-09-12_19-38-38-01] and [SC-2026-09-12_19-38-38-02]:
+schedule entries for both directions exist after commit."
   (let* ((adapter (total-recall-storage-init nil))
          (input "term:: dependency injection\ndefinition:: passing dependencies as function arguments\ntags:: :software :design-patterns\ndepth:: 4")
          (id (total-recall-capture--commit adapter input))
-         (loaded (funcall (plist-get adapter :load-item) id)))
+         (loaded (funcall (plist-get adapter :load-item) id))
+         (fwd-sched (funcall (plist-get adapter :load-schedule) id "forward"))
+         (bwd-sched (funcall (plist-get adapter :load-schedule) id "backward")))
     (should (stringp id))
     (should loaded)
     (should (equal (funcall loaded 'get :term) "dependency injection"))
     (should (equal (funcall loaded 'get :definition)
                    "passing dependencies as function arguments"))
     (should (equal (funcall loaded 'get :tags) '(:software :design-patterns)))
-    (should (equal (funcall loaded 'get :depth) 4))))
+    (should (equal (funcall loaded 'get :depth) 4))
+    ;; [SC-2026-09-12_19-38-38-02] — forward and backward schedule exist
+    (should fwd-sched)
+    (should (funcall fwd-sched 'get :next-review))
+    (should (string-match-p "\\`[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}T[0-9]\\{2\\}:[0-9]\\{2\\}:[0-9]\\{2\\}"
+                            (funcall fwd-sched 'get :next-review)))
+    (should bwd-sched)
+    (should (funcall bwd-sched 'get :next-review))
+    (should (string-match-p "\\`[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}T[0-9]\\{2\\}:[0-9]\\{2\\}:[0-9]\\{2\\}"
+                            (funcall bwd-sched 'get :next-review)))))
 
 ;; ---------------------------------------------------------------------------
 ;; 3.2 Factory and registration

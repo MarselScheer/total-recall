@@ -202,6 +202,13 @@ or comment-only."
         (when tags
           (apply #'total-recall-tag--add item tags))
         (funcall (plist-get adapter :save-item) item)
+        ;; Create initial schedule entries so the item is immediately
+        ;; due for review in both directions (forward and backward).
+        (let ((forward (total-recall-make-schedule (list :item-id id)))
+              (backward (total-recall-make-schedule (list :item-id id
+                                                          :direction "backward"))))
+          (funcall (plist-get adapter :save-schedule) forward)
+          (funcall (plist-get adapter :save-schedule) backward))
         id))))
 
 (defun total-recall-capture-init (adapter &rest args)
