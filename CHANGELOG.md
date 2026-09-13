@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] — 2026-09-12
+
+### Fixed
+
+- **Initial schedule creation on capture** — `total-recall-capture--commit` now creates
+  `"forward"` and `"backward"` schedule entries for newly captured items, making them
+  immediately due for review. Previously, items captured via org-capture were persisted
+  to the `items` table but never received a `schedule` row, rendering them invisible
+  to the training queue.
+
 ## [0.3.0] — 2026-09-12
 
 ### Added
