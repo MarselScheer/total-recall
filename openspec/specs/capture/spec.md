@@ -78,13 +78,18 @@ The examples field SHALL parse each bullet line into a cons cell `(text . props)
 - **WHEN** the buffer contains `examples::\n  - "\nclass A:\n    a: int = 20" :lang Python`
 - **THEN** the parser SHALL return `:examples (("\nclass A:\n    a: int = 20" . (:lang "Python")))`
 
-### Requirement: Commit parses, creates, and saves
-The commit function SHALL parse the buffer, create an item from the parsed data, and persist it.
+### Requirement: Commit parses, creates, saves, and initializes schedule
+The commit function SHALL parse the buffer, create an item from the parsed data, persist it, and create initial schedule entries so the item is immediately due for review.
 
 #### Scenario: Commit persists valid capture data
 - **WHEN** the commit function processes a valid capture buffer
 - **THEN** a new item SHALL be created from the parsed data and persisted
 - **AND** the function SHALL return the new item's identifier
+
+#### Scenario: Commit creates forward and backward schedule for new item
+- **WHEN** the commit function processes a valid capture buffer
+- **THEN** a forward schedule SHALL exist for the new item with `:next-review` set to now (immediately due)
+- **AND** a backward schedule SHALL exist for the new item with `:next-review` set to now (immediately due)
 
 #### Scenario: Commit with empty buffer does nothing
 - **WHEN** the commit function processes an empty (or comment-only) buffer
