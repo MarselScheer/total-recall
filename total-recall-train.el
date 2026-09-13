@@ -214,6 +214,44 @@ Returns an updated state plist."
       (total-recall-train--session-advance state))))
 
 ;; ---------------------------------------------------------------------------
+;; Faces
+;; ---------------------------------------------------------------------------
+
+(defface total-recall-train-examples-face
+  '((t (:inherit fixed-pitch :foreground "ForestGreen")))
+  "Face used for the :examples field when the answer is revealed."
+  :group 'total-recall)
+
+(defface total-recall-train-notes-face
+  '((t (:inherit fixed-pitch :foreground "SaddleBrown")))
+  "Face used for the :notes field when the answer is revealed."
+  :group 'total-recall)
+
+(defface total-recall-train-analogy-face
+  '((t (:inherit fixed-pitch :foreground "DodgerBlue")))
+  "Face used for the :analogy field when the answer is revealed."
+  :group 'total-recall)
+
+;; ---------------------------------------------------------------------------
+;; Rendering helpers
+;; ---------------------------------------------------------------------------
+
+(defun total-recall-train--render-field (heading value &optional face)
+  "Insert HEADING and VALUE into the current buffer if VALUE is non-nil.
+
+HEADING is a string label shown on its own line with \"─── ───\" delimiters.
+VALUE is the content string to insert on the following line.
+FACE (optional) is a face symbol applied to the VALUE text.
+Does nothing when VALUE is nil."
+  (when value
+    (insert (format "─── %s ───\n" heading))
+    (let ((start (point)))
+      (insert (format "%s\n" value))
+      (when face
+        (put-text-property start (1- (point)) 'font-lock-face face)))
+    (insert "\n")))
+
+;; ---------------------------------------------------------------------------
 ;; Rendering
 ;; ---------------------------------------------------------------------------
 
@@ -229,12 +267,47 @@ Returns an updated state plist."
          (answer (if (string= direction "forward")
                      (funcall item 'get :definition)
                    (funcall item 'get :term)))
-         (revealed (plist-get state :answer-revealed)))
+         (revealed (plist-get state :answer-revealed))
+         (id (funcall item 'get :id))
+         (adapter (plist-get state :adapter)))
     (insert (format "═══ [%s] ═══ %s ═══\n\n" pos (capitalize direction)))
     (insert prompt "\n\n")
     (if revealed
-        (insert "─── Answer ───\n" answer "\n\n"
-                "c correct | w wrong | q quit\n")
+        (progn
+          (insert "─── Answer ───\n" answer "\n\n")
+          ;; Schedule metadata
+          (when-let ((schedule (funcall (plist-get adapter :load-schedule) id direction)))
+            (let ((reps (funcall schedule 'get :repetitions))
+                  (last-review (funcall schedule 'get :last-review))
+                  (lapses (funcall schedule 'get :lapses)))
+              (insert (format "─── Schedule ───\n"))
+              (insert (format "repetitions: %d    last-review: %s    lapses: %d\n\n"
+                              reps (or last-review "never") lapses))))
+          ;; Item fields
+          (let* ((tags (funcall item 'get :tags))
+                 (depth (funcall item 'get :depth))
+                 (examples (funcall item 'get :examples))
+                 (notes (funcall item 'get :notes))
+                 (analogy (funcall item 'get :analogy)))
+            (total-recall-train--render-field
+             "Tags"
+             (when tags (mapconcat #'symbol-name tags " ")))
+            (total-recall-train--render-field
+             "Depth"
+             (when depth (number-to-string depth)))
+            (total-recall-train--render-field
+             "Examples"
+             (when examples
+               (mapconcat #'car examples "\n"))
+             'total-recall-train-examples-face)
+            (total-recall-train--render-field
+             "Notes" notes
+             'total-recall-train-notes-face)
+            (total-recall-train--render-field
+             "Analogy" analogy
+             'total-recall-train-analogy-face))
+          (insert "c correct | w wrong | q quit\n")
+          )
       (insert "─── ??? ───\n\n"
               "SPC to reveal | q quit\n"))))
 

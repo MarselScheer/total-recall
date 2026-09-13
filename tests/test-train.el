@@ -586,5 +586,153 @@ SC-2026-09-09_18-29-07-33"
           (message "No items due for review.")
           (should (equal msg "No items due for review.")))))))
 
+;; ---------------------------------------------------------------------------
+;; 2.1 — Schedule metadata on reveal
+;; ---------------------------------------------------------------------------
+
+(ert-deftest test-train-reveal-shows-schedule-metadata ()
+  "Reveal shows schedule metadata (repetitions, last-review, lapses).
+SC-2026-09-09_18-29-07-27"
+  (let* ((adapter (total-recall-storage-init nil))
+         (item (test-train--make-item-with-schedule
+                adapter "foo" "forward" test-train--past))
+         (id (funcall item 'get :id))
+         (queue (list (cons item "forward"))))
+    ;; Set a known last-review on the schedule
+    (let ((sched (funcall (plist-get adapter :load-schedule) id "forward")))
+      (funcall sched 'set :last-review "1999-12-31T00:00:00.000000+0000")
+      (funcall (plist-get adapter :save-schedule) sched))
+    (with-temp-buffer
+      (total-recall-train-mode)
+      (setq-local total-recall-train--session
+                  (total-recall-train--session-state queue adapter))
+      (total-recall-train--render)
+      ;; Reveal
+      (total-recall-train-reveal)
+      (let ((content (buffer-string)))
+        (should (string-match-p "Schedule" content))
+        (should (string-match-p "repetitions" content))
+        (should (string-match-p "last-review" content))
+        (should (string-match-p "lapses" content))
+        (should (string-match-p "1999-12-31" content))))))
+
+;; ---------------------------------------------------------------------------
+;; 2.2 — All item fields on reveal
+;; ---------------------------------------------------------------------------
+
+(ert-deftest test-train-reveal-shows-item-fields ()
+  "Reveal shows all non-nil item fields with proper headings.
+SC-2026-09-12_22-02-42-01, SC-2026-09-12_22-02-42-02, SC-2026-09-12_22-02-42-03"
+  (let* ((adapter (total-recall-storage-init nil))
+         (item (total-recall-make-item
+                (list :term "foo" :definition "definition-of-foo"
+                      :tags '(:german :vocabulary)
+                      :depth 5
+                      :examples '(("ein Beispiel" . (:source "book")))
+                      :notes "note text"
+                      :analogy "analogy text")))
+         (id (funcall item 'get :id))
+         (queue (list (cons item "forward"))))
+    (funcall (plist-get adapter :save-item) item)
+    (funcall (plist-get adapter :save-schedule)
+             (total-recall-make-schedule
+              (list :item-id id :direction "forward" :next-review test-train--past)))
+    (with-temp-buffer
+      (total-recall-train-mode)
+      (setq-local total-recall-train--session
+                  (total-recall-train--session-state queue adapter))
+      (total-recall-train--render)
+      (total-recall-train-reveal)
+      (let ((content (buffer-string)))
+        (should (string-match-p "Tags" content))
+        (should (string-match-p "Depth" content))
+        (should (string-match-p "Examples" content))
+        (should (string-match-p "Notes" content))
+        (should (string-match-p "Analogy" content))
+        (should (string-match-p "german" content))
+        (should (string-match-p "vocabulary" content))
+        (should (string-match-p "5" content))
+        (should (string-match-p "ein Beispiel" content))
+        (should (string-match-p "note text" content))
+        (should (string-match-p "analogy text" content))))))
+
+(ert-deftest test-train-reveal-omits-nil-fields ()
+  "Nil item fields are omitted on reveal.
+SC-2026-09-12_22-02-42-04"
+  (let* ((adapter (total-recall-storage-init nil))
+         (item (total-recall-make-item
+                (list :term "foo" :definition "definition-of-foo"
+                      :tags nil
+                      :depth 3
+                      :examples nil
+                      :notes nil
+                      :analogy nil)))
+         (id (funcall item 'get :id))
+         (queue (list (cons item "forward"))))
+    (funcall (plist-get adapter :save-item) item)
+    (funcall (plist-get adapter :save-schedule)
+             (total-recall-make-schedule
+              (list :item-id id :direction "forward" :next-review test-train--past)))
+    (with-temp-buffer
+      (total-recall-train-mode)
+      (setq-local total-recall-train--session
+                  (total-recall-train--session-state queue adapter))
+      (total-recall-train--render)
+      (total-recall-train-reveal)
+      (let ((content (buffer-string)))
+        ;; Depth has a default of 3 so it should always be shown
+        (should (string-match-p "Depth" content))
+        (should-not (string-match-p "Tags" content))
+        (should-not (string-match-p "Examples" content))
+        (should-not (string-match-p "Notes" content))
+        (should-not (string-match-p "Analogy" content))))))
+
+;; ---------------------------------------------------------------------------
+;; 1.1 — Faces and rendering infrastructure
+;; ---------------------------------------------------------------------------
+
+(ert-deftest test-train-examples-face-defined ()
+  "total-recall-train-examples-face is a defined face.
+SC-2026-09-12_22-02-42-01"
+  (should (facep 'total-recall-train-examples-face)))
+
+(ert-deftest test-train-notes-face-defined ()
+  "total-recall-train-notes-face is a defined face.
+SC-2026-09-12_22-02-42-02"
+  (should (facep 'total-recall-train-notes-face)))
+
+(ert-deftest test-train-analogy-face-defined ()
+  "total-recall-train-analogy-face is a defined face.
+SC-2026-09-12_22-02-42-03"
+  (should (facep 'total-recall-train-analogy-face)))
+
+(ert-deftest test-train-render-field-inserts-heading ()
+  "total-recall-train--render-field inserts a heading line and the value.
+SC-2026-09-12_22-02-42-01"
+  (with-temp-buffer
+    (total-recall-train--render-field "Examples" "some content" nil)
+    (let ((content (buffer-string)))
+      (should (string-match-p "Examples" content))
+      (should (string-match-p "some content" content)))))
+
+(ert-deftest test-train-render-field-skips-nil ()
+  "total-recall-train--render-field inserts nothing for nil value.
+SC-2026-09-12_22-02-42-04"
+  (with-temp-buffer
+    (total-recall-train--render-field "Examples" nil nil)
+    (should (string= "" (buffer-string)))))
+
+(ert-deftest test-train-render-field-applies-face ()
+  "total-recall-train--render-field applies the given face to the value text.
+SC-2026-09-12_22-02-42-01"
+  (with-temp-buffer
+    (total-recall-train--render-field "Examples" "some content"
+                                      'total-recall-train-examples-face)
+    (goto-char (point-min))
+    ;; Skip the heading line, find the content line
+    (forward-line 1)
+    (let ((props (text-properties-at (point))))
+      (should (memq 'total-recall-train-examples-face props)))))
+
 (provide 'test-train)
 ;;; test-train.el ends here
