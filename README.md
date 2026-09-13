@@ -191,6 +191,33 @@ buffer where you:
 Wrong answers are re-queued and shown again before the session ends. When the
 queue is exhausted, a summary with correct/wrong counts is displayed.
 
+### Customizing the Reveal Appearance
+
+When the answer is revealed, non-nil item fields are displayed with colored
+faces. You can customize these faces in your config:
+
+```elisp
+;; Change the examples face
+(set-face-attribute 'total-recall-train-examples-face nil
+                    :foreground "#50C878" :inherit 'fixed-pitch)
+
+;; Change the notes face
+(set-face-attribute 'total-recall-train-notes-face nil
+                    :foreground "#CD853F" :inherit 'fixed-pitch)
+
+;; Change the analogy face
+(set-face-attribute 'total-recall-train-analogy-face nil
+                    :foreground "#1E90FF" :inherit 'fixed-pitch)
+```
+
+| Face | Applied to | Default |
+|---|---|---|
+| `total-recall-train-examples-face` | `:examples` field values | ForestGreen, fixed-pitch |
+| `total-recall-train-notes-face` | `:notes` field values | SaddleBrown, fixed-pitch |
+| `total-recall-train-analogy-face` | `:analogy` field values | DodgerBlue, fixed-pitch |
+
+The `:tags` and `:depth` fields are displayed using the buffer's default face.
+
 Pass a prefix argument (`C-u M-x total-recall-train`) to pick a database file
 at session time, overriding `total-recall-train-db-path`.
 

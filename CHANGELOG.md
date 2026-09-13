@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] — 2026-09-13
+
+### Added
+
+- **Full item reveal** — when the answer is revealed during a training session,
+  schedule metadata (repetitions, last-review, lapses) is now displayed alongside
+  the answer for the current direction.
+- **Item field display on reveal** — non-nil item fields (tags, depth, examples,
+  notes, analogy) are shown on answer reveal, with each field heading on its
+  own line and colored faces for rich fields.
+- **Custom faces** — three new faces for revealed fields:
+  - `total-recall-train-examples-face` (ForestGreen, fixed-pitch) — for `:examples`
+  - `total-recall-train-notes-face` (SaddleBrown, fixed-pitch) — for `:notes`
+  - `total-recall-train-analogy-face` (DodgerBlue, fixed-pitch) — for `:analogy`
+- **Rendering helper** (`total-recall-train--render-field`) — reusable function
+  that inserts a heading with `─── ───` delimiters and optionally applies a
+  face to the value text; skips nil values gracefully.
+- **Tests** — 8 new ERT tests covering schedule metadata display, all-item-field
+  reveal, nil-field omission, face definitions, and the render-field helper.
+
+### Changed
+
+- `total-recall-train--render` — enhanced the answer-revealed branch to show
+  schedule metadata from the direction-aware schedule and all non-nil item
+  fields with appropriate faces.
+
 ## [0.3.1] — 2026-09-12
 
 ### Fixed
