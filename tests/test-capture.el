@@ -101,6 +101,23 @@
     (should (equal (total-recall-capture--parse input)
                    '(:examples (("\nclass A:\n    a: int = 20" . (:lang "Python"))))))))
 
+(ert-deftest test-capture-parse-example-unquoted ()
+  "Parse an unquoted bullet as example with no props.
+
+Covers [SC-2026-09-13_08-01-06-04]."
+  (let ((input "examples::\n  - просто текст"))
+    (should (equal (total-recall-capture--parse input)
+                   '(:examples (("просто текст" . ())))))))
+
+(ert-deftest test-capture-parse-example-mixed-quoted-unquoted ()
+  "Parse a mix of quoted and unquoted bullets correctly.
+
+Covers [SC-2026-09-13_08-01-06-01] and [SC-2026-09-13_08-01-06-04] combined."
+  (let ((input "examples::\n  - \"quoted text\" :lang ru\n  - bare text without quotes"))
+    (should (equal (total-recall-capture--parse input)
+                   '(:examples (("quoted text" . (:lang "ru"))
+                                ("bare text without quotes" . ())))))))
+
 ;; ---------------------------------------------------------------------------
 ;; 3.1 Commit function
 ;; ---------------------------------------------------------------------------
