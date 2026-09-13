@@ -145,7 +145,10 @@ is a plist of alternating :key val pairs from remaining tokens."
                 ;; Case 2: opening quote, no closing quote: multi-line starts
                 (if (string-match "\\`\"\\(.*\\)\\'" rest)
                     (setq current-text (match-string-no-properties 1 rest))
-                  ;; Case 3: no quoted string — skip this bullet
+                  ;; Case 3: no quoted string — treat bare text as a
+                  ;; plain example with no properties
+                  (setq current-text rest)
+                  (setq current-props nil)
                   (setq in-bullet nil)))))
         ;; Continuation of the current example
         (when (and in-bullet current-text)
