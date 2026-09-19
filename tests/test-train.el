@@ -734,5 +734,117 @@ SC-2026-09-12_22-02-42-01"
     (let ((props (text-properties-at (point))))
       (should (memq 'total-recall-train-examples-face props)))))
 
+;; ---------------------------------------------------------------------------
+;; 3.1 — Edit keybinding (E) [SC-2026-09-19_12-33-15-02]
+;; ---------------------------------------------------------------------------
+
+(ert-deftest test-train-edit-suppressed-before-reveal ()
+  "Pressing E before answer is revealed does nothing.
+[SC-2026-09-19_12-33-15-02]"
+  (let* ((adapter (total-recall-storage-init nil))
+         (item (test-train--make-item-with-schedule
+                adapter "foo" "forward" test-train--past))
+         (queue (list (cons item "forward"))))
+    (with-temp-buffer
+      (total-recall-train-mode)
+      (setq-local total-recall-train--session
+                  (total-recall-train--session-state queue adapter))
+      (total-recall-train--render)
+      ;; Answer hidden — E should not open an edit buffer
+      (total-recall-train-edit)
+      (should (null (get-buffer "*total-recall-edit*")))
+      (should (string= (buffer-string)
+                       (with-temp-buffer
+                         (total-recall-train-mode)
+                         (setq-local total-recall-train--session
+                                     (total-recall-train--session-state queue adapter))
+                         (total-recall-train--render)
+                         (buffer-string)))))))
+
+;; ---------------------------------------------------------------------------
+;; 3.1 — Edit opens edit buffer when revealed [SC-2026-09-19_12-33-15-01]
+;; ---------------------------------------------------------------------------
+
+(ert-deftest test-train-edit-opens-edit-buffer ()
+  "Pressing E when answer is revealed opens edit buffer with pre-filled content.
+[SC-2026-09-19_12-33-15-01]"
+  (let* ((adapter (total-recall-storage-init nil))
+         (item (test-train--make-item-with-schedule
+                adapter "foo" "forward" test-train--past))
+         (queue (list (cons item "forward"))))
+    (with-temp-buffer
+      (total-recall-train-mode)
+      (setq-local total-recall-train--session
+                  (total-recall-train--session-state queue adapter))
+      (total-recall-train--render)
+      ;; Reveal then press E
+      (total-recall-train-reveal)
+      (total-recall-train-edit)
+      (let ((edit-buf (get-buffer "*total-recall-edit*")))
+        (unwind-protect
+            (progn
+              (should edit-buf)
+              (should (buffer-live-p edit-buf))
+              (with-current-buffer edit-buf
+                (should (eq major-mode 'total-recall-edit-mode))
+                (should (string-match-p "term:: foo" (buffer-string)))
+                (should (string-match-p "definition:: definition-of-foo" (buffer-string)))))
+          (when (buffer-live-p edit-buf)
+            (kill-buffer edit-buf)))))))
+
+;; ---------------------------------------------------------------------------
+;; 3.1 — Keybinding E is bound in mode map
+;; ---------------------------------------------------------------------------
+
+(ert-deftest test-train-mode-has-edit-keybinding ()
+  "total-recall-train-mode-map has E bound to total-recall-train-edit.
+[SC-2026-09-19_12-33-15-01]"
+  (should (fboundp 'total-recall-train-edit))
+  (let ((map (default-value 'total-recall-train-mode-map)))
+    (should (eq (lookup-key map (kbd "E")) 'total-recall-train-edit))))
+
+;; ---------------------------------------------------------------------------
+;; 3.2 — Training display updates after commit [SC-2026-09-19_12-33-15-08]
+;; ---------------------------------------------------------------------------
+
+(ert-deftest test-train-edit-updates-display-after-commit ()
+  "After commit, the training buffer shows the updated field values.
+[SC-2026-09-19_12-33-15-08]"
+  (let* ((adapter (total-recall-storage-init nil))
+         (item (total-recall-make-item
+                (list :term "foo" :definition "original-def"
+                      :notes "original note")))
+         (id (funcall item 'get :id))
+         (queue (list (cons item "forward"))))
+    (funcall (plist-get adapter :save-item) item)
+    (funcall (plist-get adapter :save-schedule)
+             (total-recall-make-schedule
+              (list :item-id id :direction "forward"
+                    :next-review test-train--past)))
+    (with-temp-buffer
+      (total-recall-train-mode)
+      (setq-local total-recall-train--session
+                  (total-recall-train--session-state queue adapter))
+      (total-recall-train--render)
+      ;; Reveal
+      (total-recall-train-reveal)
+      (should (string-match-p "original-def" (buffer-string)))
+      ;; Open edit and commit a change
+      (total-recall-train-edit)
+      (let ((edit-buf (get-buffer "*total-recall-edit*")))
+        (should edit-buf)
+        (with-current-buffer edit-buf
+          (erase-buffer)
+          (insert "term:: foo\ndefinition:: updated-def")
+          (total-recall-edit-commit))
+        ;; Edit buffer should be gone
+        (should (not (buffer-live-p edit-buf)))
+        ;; Training buffer should show the updated definition
+        (should (string-match-p "updated-def" (buffer-string)))
+        (should (string-match-p "1/1" (buffer-string))))
+      ;; Item in storage should be updated
+      (let ((loaded (funcall (plist-get adapter :load-item) id)))
+        (should (equal (funcall loaded 'get :definition) "updated-def"))))))
+
 (provide 'test-train)
 ;;; test-train.el ends here

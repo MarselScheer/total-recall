@@ -10,6 +10,7 @@
 (require 'total-recall-item)
 (require 'total-recall-sched)
 (require 'total-recall-storage)
+(require 'total-recall-edit)
 
 ;; ---------------------------------------------------------------------------
 ;; Configuration
@@ -258,8 +259,16 @@ Does nothing when VALUE is nil."
 (defun total-recall-train--render-card (state)
   "Render the current card from STATE into the current buffer."
   (let* ((current (plist-get state :current))
-         (item (car current))
+         (original-item (car current))
          (direction (cdr current))
+         (id (funcall original-item 'get :id))
+         (adapter (plist-get state :adapter))
+         ;; Reload from storage to pick up any edits made on a
+         ;; sibling card (e.g. editing the forward direction then
+         ;; viewing backward).  Falls back to the original closure
+         ;; when storage is unavailable or the item was deleted.
+         (item (or (funcall (plist-get adapter :load-item) id)
+                   original-item))
          (pos (total-recall-train--session-position state))
          (prompt (if (string= direction "forward")
                      (funcall item 'get :term)
@@ -267,9 +276,7 @@ Does nothing when VALUE is nil."
          (answer (if (string= direction "forward")
                      (funcall item 'get :definition)
                    (funcall item 'get :term)))
-         (revealed (plist-get state :answer-revealed))
-         (id (funcall item 'get :id))
-         (adapter (plist-get state :adapter)))
+         (revealed (plist-get state :answer-revealed)))
     (insert (format "═══ [%s] ═══ %s ═══\n\n" pos (capitalize direction)))
     (insert prompt "\n\n")
     (if revealed
@@ -306,7 +313,7 @@ Does nothing when VALUE is nil."
             (total-recall-train--render-field
              "Analogy" analogy
              'total-recall-train-analogy-face))
-          (insert "c correct | w wrong | q quit\n")
+          (insert "c correct | w wrong | E edit | q quit\n")
           )
       (insert "─── ??? ───\n\n"
               "SPC to reveal | q quit\n"))))
@@ -350,6 +357,7 @@ has just been created and no card is yet current."
     (define-key map (kbd "SPC") 'total-recall-train-reveal)
     (define-key map "c" 'total-recall-train-correct)
     (define-key map "w" 'total-recall-train-wrong)
+    (define-key map "E" 'total-recall-train-edit)
     (define-key map "q" 'total-recall-train-quit)
     map)
   "Keymap for `total-recall-train-mode'.")
@@ -411,6 +419,39 @@ end of the session, and advances."
   (interactive)
   (when (buffer-live-p (current-buffer))
     (kill-buffer (current-buffer))))
+
+(defun total-recall-train-edit ()
+  "Edit the current item from the training buffer.
+
+Has no effect when the answer is hidden.
+When the answer is revealed, loads the current item from storage,
+opens an edit buffer with pre-filled data, and sets up the
+after-commit callback to re-render the training buffer."
+  (interactive)
+  (let* ((state total-recall-train--session)
+         (adapter (plist-get state :adapter))
+         (current (plist-get state :current))
+         (item (car current))
+         (id (funcall item 'get :id))
+         (return-buf (current-buffer)))
+    (when (plist-get state :answer-revealed)
+      (let* ((loaded (funcall (plist-get adapter :load-item) id))
+             (after-commit
+              (lambda ()
+                (let* ((buf total-recall-edit--return-buffer))
+                  (when (buffer-live-p buf)
+                    (with-current-buffer buf
+                      (let* ((st total-recall-train--session)
+                             (cur (plist-get st :current))
+                             (dir (cdr cur))
+                             (item-id (funcall (car cur) 'get :id))
+                             (st-adapter (plist-get st :adapter))
+                             (reloaded (funcall (plist-get st-adapter :load-item) item-id)))
+                        (setq-local total-recall-train--session
+                                    (plist-put st :current
+                                               (cons reloaded dir)))
+                        (total-recall-train--render))))))))
+        (total-recall-edit--open loaded adapter return-buf after-commit)))))
 
 ;; ---------------------------------------------------------------------------
 ;; Interactive command factory
