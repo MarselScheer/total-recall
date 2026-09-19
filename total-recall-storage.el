@@ -128,7 +128,7 @@ Returns a plist of adapter functions:
                          (json-encode ex)
                        "[]")))
               (sqlite-execute db
-                "INSERT OR REPLACE INTO items (id, term, definition, tags, depth, examples, analogy, notes, created, modified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                "INSERT OR IGNORE INTO items (id, term, definition, tags, depth, examples, analogy, notes, created, modified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                 (list (plist-get data :id)
                       (plist-get data :term)
                       (plist-get data :definition)
@@ -138,7 +138,19 @@ Returns a plist of adapter functions:
                       (plist-get data :analogy)
                       (plist-get data :notes)
                       (plist-get data :created)
-                      (plist-get data :modified)))))
+                      (plist-get data :modified)))
+              (sqlite-execute db
+                "UPDATE items SET term = ?, definition = ?, tags = ?, depth = ?, examples = ?, analogy = ?, notes = ?, created = ?, modified = ? WHERE id = ?"
+                (list (plist-get data :term)
+                      (plist-get data :definition)
+                      encoded-tags
+                      (plist-get data :depth)
+                      encoded-examples
+                      (plist-get data :analogy)
+                      (plist-get data :notes)
+                      (plist-get data :created)
+                      (plist-get data :modified)
+                      (plist-get data :id)))))
 
           :delete-item
           (lambda (id)

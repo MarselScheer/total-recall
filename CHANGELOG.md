@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] — 2026-09-19
+
+### Added
+
+- **Edit module** (`total-recall-edit.el`) — interactive editing of
+  memorization items via a dedicated edit buffer. Users can modify term,
+  definition, tags, depth, examples, notes, and analogy fields using the same
+  `key:: value` format as the capture template. Commit (`C-c C-c`) persists
+  changes, cancel (`C-c C-k`) discards them.
+- **Training edit keybinding** — `E` (uppercase) in the training buffer opens
+  the edit buffer when the answer is revealed. After committing, the training
+  display updates with the new values while preserving card position and
+  session progress.
+- **Storage update support** — `total-recall-storage-init`'s `:save-item`
+  adapter now uses `INSERT OR IGNORE` + `UPDATE` instead of `INSERT OR
+  REPLACE`, preventing accidental deletion of schedule records (foreign key
+  targets).
+- **Tests** — 18 new ERT tests in `tests/test-edit.el` covering pre-fill,
+  commit, cancel, validation, and after-commit callback; 4 new tests in
+  `tests/test-train.el` for edit keybinding and display update.
+
+### Changed
+
+- `total-recall-storage.el` — `:save-item` split into INSERT and UPDATE
+  operations for safer item editing.
+- `total-recall-train.el` — `total-recall-train--render-card` now reloads the
+  item from storage on every render to reflect edits made via the edit buffer.
+- `total-recall-train.el` — added `E` keybinding in
+  `total-recall-train-mode-map` and updated help text.
+- `total-recall.el` — added `(require 'total-recall-edit)` for the new module.
+
+### Documentation
+
+- **OpenSpec specs** — added 8 edit scenarios to
+  `openspec/specs/training/spec.md`; added scenario IDs to capture spec
+  scenarios.
+
 ## [0.4.1] — 2026-09-13
 
 ### Added
