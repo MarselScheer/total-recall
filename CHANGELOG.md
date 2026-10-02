@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] — 2026-10-02
+
+### Added
+
+- **Search module** (`total-recall-search.el`) — interactive fuzzy search
+  command `total-recall-search` that grabs the word at point from the current
+  Emacs buffer and finds the closest matches in the memorization database
+  using Levenshtein edit distance.
+- **Levenshtein distance** (`total-recall-search--levenshtein-distance`) —
+  pure Elisp implementation using a 2-row dynamic programming approach
+  with O(min(m,n)) space complexity.
+- **Configurable result count** — new `defcustom` `total-recall-search-count`
+  (default 5) controls how many matches are displayed.
+- **Database path configuration** — `total-recall-search-db-path` for
+  persistent search database; falls back to
+  `total-recall-train-db-path` when nil (in-memory by default).
+- **Result display** — each result shows the item's term, Levenshtein
+  distance, and a truncated definition in the minibuffer.
+- **Tests** — 14 new ERT tests in `tests/test-search.el` covering
+  Levenshtein distance (7 tests: equal, empty, insertion, deletion,
+  substitution, multi-edit, asymmetric) and the search command (7 tests:
+  exact match, sorted results, no word at point, empty database, count
+  limits, db-path precedence, db-path fallback).
+
+### Changed
+
+- `total-recall.el` — added `(require 'total-recall-search)` for the new
+  module.
+
+### Documentation
+
+- **OpenSpec specs** — new `openspec/specs/search/spec.md` with 6
+  requirements and requirement IDs (`SC-2026-10-02_18-27-23-{1..5}`) for
+  traceability to test docstrings.
+
 ## [0.5.0] — 2026-09-19
 
 ### Added
