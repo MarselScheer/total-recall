@@ -23,6 +23,7 @@
 (require 'total-recall-capture)
 (require 'total-recall-train)
 (require 'total-recall-edit)
+(require 'total-recall-search)
 
 (provide 'total-recall)
 
