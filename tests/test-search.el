@@ -5,6 +5,10 @@
 (require 'total-recall-search)
 (require 'total-recall-storage)
 
+;; Declare this special so cl-letf can bind it in tests
+;; (normally defined in total-recall-train.el)
+(defvar total-recall-train-db-path)
+
 ;; ---------------------------------------------------------------------------
 ;; 1 — Levenshtein distance
 ;; ---------------------------------------------------------------------------
@@ -120,6 +124,40 @@
               (total-recall-search-count 3))
       (funcall cmd))
     (should (string-prefix-p "Top 3 matches:" (car messages)))))
+
+;; ---------------------------------------------------------------------------
+;; 3 — Database path fallback
+;; ---------------------------------------------------------------------------
+
+(ert-deftest test-search-uses-search-db-path ()
+  "total-recall-search passes `total-recall-search-db-path' to storage-init."
+  (let* ((adapter (total-recall-storage-init nil))
+         (captured-path 'not-called)
+         messages)
+    (cl-letf (((symbol-function 'total-recall-storage-init)
+               (lambda (path) (setq captured-path path) adapter))
+              ((symbol-function 'thing-at-point) (lambda (&rest _) "test"))
+              ((symbol-function 'message) (lambda (fmt &rest args)
+                                            (push (apply #'format fmt args) messages)))
+              (total-recall-search-db-path "/some/search.db")
+              (total-recall-train-db-path "/some/train.db"))
+      (total-recall-search))
+    (should (equal captured-path "/some/search.db"))))
+
+(ert-deftest test-search-falls-back-to-train-db-path ()
+  "When `total-recall-search-db-path' is nil, falls back to `total-recall-train-db-path'."
+  (let* ((adapter (total-recall-storage-init nil))
+         (captured-path 'not-called)
+         messages)
+    (cl-letf (((symbol-function 'total-recall-storage-init)
+               (lambda (path) (setq captured-path path) adapter))
+              ((symbol-function 'thing-at-point) (lambda (&rest _) "test"))
+              ((symbol-function 'message) (lambda (fmt &rest args)
+                                            (push (apply #'format fmt args) messages)))
+              (total-recall-search-db-path nil)
+              (total-recall-train-db-path "/some/train.db"))
+      (total-recall-search))
+    (should (equal captured-path "/some/train.db"))))
 
 (provide 'test-search)
 ;;; test-search.el ends here

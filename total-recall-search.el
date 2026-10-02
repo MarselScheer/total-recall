@@ -162,7 +162,10 @@ Grabs the word at point from the current buffer, computes Levenshtein
 distance to every item term in the database, and displays the top
 matches in the minibuffer sorted by ascending distance."
   (interactive)
-  (let* ((adapter (total-recall-storage-init total-recall-search-db-path))
+  (let* ((db-path (or total-recall-search-db-path
+                      (and (boundp 'total-recall-train-db-path)
+                           total-recall-train-db-path)))
+         (adapter (total-recall-storage-init db-path))
          (cmd (total-recall-search-init adapter)))
     (funcall cmd)))
 
