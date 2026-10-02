@@ -65,7 +65,10 @@
     item))
 
 (ert-deftest test-search-exact-match-first ()
-  "Exact match appears first in results with distance 0."
+  "Exact match appears first in results with distance 0.
+
+Refs: `SC-2026-10-02_18-27-23-1` (Word at point matches a term exactly),
+      `SC-2026-10-02_18-27-23-2` (Exact match is always first)"
   (let* ((adapter (total-recall-storage-init nil))
          (cmd (total-recall-search--search-fn adapter))
          (item-a (test-search--make-item adapter "voracious"))
@@ -77,7 +80,9 @@
     (should (equal (funcall (caar results) 'get :term) "voracious"))))
 
 (ert-deftest test-search-sorted-by-distance ()
-  "Results are sorted by ascending Levenshtein distance."
+  "Results are sorted by ascending Levenshtein distance.
+
+Ref: `SC-2026-10-02_18-27-23-2` (Closest match appears first)"
   (let* ((adapter (total-recall-storage-init nil))
          (cmd (total-recall-search--search-fn adapter))
          (item-close (test-search--make-item adapter "храбрость"))  ; dist to "храбрый"
@@ -89,7 +94,9 @@
     (should (<= (cdar results) (cdadr results) (cdaddr results)))))
 
 (ert-deftest test-search-no-word-at-point ()
-  "No word at point shows an appropriate message."
+  "No word at point shows an appropriate message.
+
+Ref: `SC-2026-10-02_18-27-23-1` (No word at point)"
   (let* ((adapter (total-recall-storage-init nil))
          (cmd (total-recall-search-init adapter))
          messages)
@@ -100,7 +107,9 @@
     (should (equal (car messages) "No word found at point."))))
 
 (ert-deftest test-search-empty-database ()
-  "Empty database shows an appropriate message."
+  "Empty database shows an appropriate message.
+
+Ref: `SC-2026-10-02_18-27-23-1` (Word at point matches nothing)"
   (let* ((adapter (total-recall-storage-init nil))
          (cmd (total-recall-search-init adapter))
          messages)
@@ -111,7 +120,9 @@
     (should (equal (car messages) "No items in database."))))
 
 (ert-deftest test-search-count-limits-results ()
-  "total-recall-search-count limits the number of results."
+  "total-recall-search-count limits the number of results.
+
+Ref: `SC-2026-10-02_18-27-23-3` (Default result count is 5 / Custom result count)"
   (let* ((adapter (total-recall-storage-init nil))
          (cmd (total-recall-search-init adapter))
          (items '("apple" "apricot" "avocado" "banana" "berry" "cherry" "date"))
