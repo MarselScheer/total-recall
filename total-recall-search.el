@@ -129,8 +129,8 @@ Results are sorted by Levenshtein distance and shown in the minibuffer."
                                             (total-recall-search--truncate
                                              (funcall item 'get :definition) 80))))
                                 top))
-                 (msg (concat (format "Top %d matches: " count)
-                              (string-join lines ", "))))
+                 (msg (concat (format "Top %d matches:\n" count)
+                              (string-join lines "\n"))))
             (message "%s" msg))))))))
 
 ;; ---------------------------------------------------------------------------
